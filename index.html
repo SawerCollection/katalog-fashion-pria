@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rekomendasi Fashion Pria</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f6f6;color:#222}
+header{background:#111;color:#fff;padding:28px 16px;text-align:center}
+header h1{margin:0 0 8px;font-size:26px}header p{margin:0;color:#ccc}
+.wrap{max-width:1050px;margin:auto;padding:18px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+input,select,button{border:1px solid #ddd;border-radius:10px;padding:11px 13px;font-size:14px}
+input{flex:1;min-width:220px}button{cursor:pointer;background:#111;color:#fff;border:0}
+.categories{display:flex;gap:8px;overflow:auto;padding-bottom:10px;margin-bottom:10px}
+.categories button{white-space:nowrap;background:#fff;color:#222;border:1px solid #ddd}.categories button.active{background:#111;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px #0000000d}
+.card img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#eee}
+.info{padding:12px}.num{font-size:12px;color:#888}.name{font-weight:700;margin:5px 0;min-height:38px}.price{font-weight:700;margin:8px 0}.buy{display:block;text-align:center;text-decoration:none;background:#ff5722;color:#fff;padding:10px;border-radius:9px;font-weight:700}
+.empty{text-align:center;padding:45px;color:#888;background:#fff;border-radius:14px}
+footer{text-align:center;color:#888;padding:30px 10px;font-size:13px}
+.admin{margin-top:25px;background:#fff;padding:18px;border-radius:14px}.admin h2{margin-top:0}.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.danger{background:#b00020}
+.small{font-size:12px;color:#777}
+@media(max-width:500px){header h1{font-size:22px}.grid{grid-template-columns:repeat(2,1fr);gap:9px}.info{padding:9px}.name{font-size:14px}.price{font-size:13px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>100 Rekomendasi Fashion Pria</h1>
+  <p>Pilihan produk yang kami rekomendasikan — cek detailnya di Shopee.</p>
+</header>
+<main class="wrap">
+  <div class="toolbar">
+    <input id="search" placeholder="Cari produk...">
+    <select id="sort"><option value="num">Urutan nomor</option><option value="name">Nama A-Z</option></select>
+  </div>
+  <div class="categories" id="categories"></div>
+  <div class="grid" id="grid"></div>
+  <section class="admin">
+    <h2>⚙️ Dashboard Admin</h2>
+    <p class="small">Data tersimpan di browser ini. Isi produk lalu tekan Simpan. Untuk website online, data bisa dipindahkan ke database/hosting nanti.</p>
+    <div class="form">
+      <input id="pnum" type="number" min="1" max="100" placeholder="Nomor 1-100">
+      <input id="pname" placeholder="Nama produk">
+      <select id="pcat"><option>Kemeja</option><option>Kaos</option><option>Celana</option><option>Topi</option><option>Sepatu</option><option>Jam Tangan</option><option>Aksesori</option></select>
+      <input id="pprice" placeholder="Harga (opsional)">
+      <input id="pimg" placeholder="URL foto produk">
+      <input id="plink" placeholder="Link affiliate Shopee">
+    </div>
+    <div class="admin-actions">
+      <button onclick="saveProduct()">Simpan Produk</button>
+      <button onclick="clearForm()">Bersihkan</button>
+      <button class="danger" onclick="resetProducts()">Reset Semua Data</button>
+    </div>
+  </section>
+</main>
+<footer>© 2026 Katalog Rekomendasi Fashion Pria</footer>
+
+<script>
+const KEY="shopee_affiliate_products_v1";
+let products=JSON.parse(localStorage.getItem(KEY)||"[]");
+let active="Semua";
+const cats=["Semua","Kemeja","Kaos","Celana","Topi","Sepatu","Jam Tangan","Aksesori"];
+
+function renderCats(){
+ document.getElementById("categories").innerHTML=cats.map(c=>`<button class="${active===c?'active':''}" onclick="setCat('${c}')">${c}</button>`).join("");
+}
+function setCat(c){active=c;renderCats();render();}
+function render(){
+ const q=document.getElementById("search").value.toLowerCase();
+ let list=products.filter(p=>(active==="Semua"||p.cat===active)&&(`${p.name} ${p.cat} ${p.num}`).toLowerCase().includes(q));
+ if(document.getElementById("sort").value==="name") list.sort((a,b)=>a.name.localeCompare(b.name)); else list.sort((a,b)=>a.num-b.num);
+ const grid=document.getElementById("grid");
+ if(!list.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1">Belum ada produk. Tambahkan dari Dashboard Admin.</div>';return}
+ grid.innerHTML=list.map(p=>`
+ <article class="card">
+   <img src="${esc(p.img||'https://placehold.co/600x600?text=Foto+Produk')}" alt="${esc(p.name)}" onerror="this.src='https://placehold.co/600x600?text=Foto+Produk'">
+   <div class="info">
+    <div class="num">No. ${p.num} • ${esc(p.cat)}</div>
+    <div class="name">${esc(p.name)}</div>
+    ${p.price?`<div class="price">${esc(p.price)}</div>`:""}
+    <a class="buy" href="${esc(p.link||'#')}" target="_blank" rel="noopener">Lihat di Shopee</a>
+   </div>
+ </article>`).join("");
+}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function saveProduct(){
+ const num=Number(pnum.value), name=pname.value.trim(), cat=pcat.value, price=pprice.value.trim(), img=pimg.value.trim(), link=plink.value.trim();
+ if(!num||num<1||num>100||!name){alert("Isi nomor 1-100 dan nama produk.");return}
+ const obj={num,name,cat,price,img,link}; const i=products.findIndex(x=>x.num===num);
+ if(i>=0) products[i]=obj; else products.push(obj);
+ localStorage.setItem(KEY,JSON.stringify(products)); clearForm(); render(); alert("Produk tersimpan.");
+}
+function clearForm(){pnum.value="";pname.value="";pprice.value="";pimg.value="";plink.value="";}
+function resetProducts(){if(confirm("Hapus semua produk dari browser ini?")){products=[];localStorage.removeItem(KEY);render();}}
+search.addEventListener("input",render);sort.addEventListener("change",render);
+renderCats();render();
+</script>
+</body>
+</html>
